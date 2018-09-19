@@ -1,5 +1,6 @@
 import datetime
 import discord
+import os
 import re
 from googletrans import Translator
 
@@ -8,7 +9,7 @@ from langs import mapping
 client = discord.Client()
 translator = Translator()
 
-token = 'NDg1NjY2MzI0ODc0Mzk1NjQ5.DoMlMg.GDb6TVSOsa-lU7bbaDlyBzCrbXI'
+token = os.environ['discord_token']
 korean_channel_id = '491240895098650624' #korean
 eng_channel_id = '491783217704337408' #korean_translated
 auto_translate = True; #kor -> eng
