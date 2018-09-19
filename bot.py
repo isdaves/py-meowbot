@@ -21,6 +21,37 @@ async def on_ready():
     print(time + ' Logged in to Discord server')
 
 
+async def sanitize_message(message):
+    """ Function receives a Message with potentially channel/user mention/emotes
+        and sanitizes it as:
+            - channels: replaced with simple "#channel_name" string
+            - user mentions: replaced with simple "@user_name" string
+            - emotes: stored and returned as-is
+    """
+    msg = message.content
+    sane_msg = {}
+    # channels
+    channel_regex = r'<#\w+>'
+    for match in re.findall(channel_regex, msg):
+        channel_id = match.replace('<#', '').replace('>', '')
+        channel_name = client.get_channel(channel_id).name
+        msg = re.sub(match, '#' + channel_name, msg)
+
+    # user mentions
+    mention_regex = r'<@!?\w+>'
+    for match in re.findall(mention_regex, msg):
+        user_id = match.replace('<@', '').replace('>', '').replace('!', '')
+        user = await client.get_user_info(user_id)
+        user_name = user.display_name or user.name
+        msg = re.sub(match, '@' + user_name, msg)
+
+    # emotes
+    emote_regex = r'<a?:\w+:\w+>'
+    sane_msg['emotes'] = re.findall(emote_regex, msg)
+    sane_msg['msg'] = re.sub(emote_regex, '', msg)
+
+    return sane_msg
+
 @client.event
 async def on_message(message):
     global korean_channel_id
@@ -35,17 +66,16 @@ async def on_message(message):
     if (message.channel.id == korean_channel_id) and auto_translate and not message.author.bot and not message.content.startswith('~'):
         eng_channel = client.get_channel(eng_channel_id)
         dude = message.author.nick or message.author.name
-        #prune emojis
-        msg = re.sub(r'<:.*:.*>', '', message.content)
 
-        #do nothing if message were all emojis
-        if msg is '' or msg.isspace():
+        sane = await sanitize_message(message)
+
+        if not sane['msg']:
             return
 
         try:
-            t = translator.translate(msg, dest='en')
+            t = translator.translate(sane['msg'], dest='en')
             flag = mapping.get(t.src, t.src)
-            reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '`'
+            reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '`' + ' '.join(sane['emotes'])
             await client.send_message(eng_channel, reply)
         except Exception as e:
             #print(str(e))
@@ -56,17 +86,16 @@ async def on_message(message):
     if (message.channel.id == eng_channel_id) and auto_translate_reverse and not message.author.bot and not message.content.startswith('~'):
         korean_channel = client.get_channel(korean_channel_id)
         dude = message.author.nick or message.author.name
-        #prune emojis
-        msg = re.sub(r'<:.*:.*>', '', message.content)
 
-        #do nothing if message were all emojis
-        if msg is '' or msg.isspace():
+        sane = await sanitize_message(message)
+
+        if not sane['msg']:
             return
 
         try:
-            t = translator.translate(msg, dest='ko')
+            t = translator.translate(sane['msg'], dest='ko')
             flag = mapping.get(t.src, t.src)
-            reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '`'
+            reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '`' + ' '.join(sane['emotes'])
             await client.send_message(korean_channel, reply)
         except Exception as e:
             #print(str(e))
