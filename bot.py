@@ -12,7 +12,7 @@ token = 'NDg1NjY2MzI0ODc0Mzk1NjQ5.DoMlMg.GDb6TVSOsa-lU7bbaDlyBzCrbXI'
 korean_channel_id = '491240895098650624' #korean
 eng_channel_id = '491783217704337408' #korean_translated
 auto_translate = True; #kor -> eng
-auto_translate_reverse = False; #eng -> kor
+auto_translate_reverse = True; #eng -> kor
 
 @client.event
 async def on_ready():
