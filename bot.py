@@ -69,7 +69,7 @@ async def on_message(message):
 
         sane = await sanitize_message(message)
 
-        if not sane['msg'] or not['emotes']
+        if not sane['msg'] or not sane['emotes']:
             return
 
         try:
