@@ -69,17 +69,16 @@ async def on_message(message):
 
         sane = await sanitize_message(message)
 
-        if not sane['msg'] or not sane['emotes']:
-            return
+        reply = '**' + dude  + '** said: ' + ''.join(sane['emotes'])
+        if sane['msg']:
+            try:
+                t = translator.translate(sane['msg'], dest='en')
+                flag = mapping.get(t.src.lower(), t.src.lower())
+                reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '` ' + ''.join(sane['emotes'])
+            except Exception as e:
+                return
 
-        try:
-            t = translator.translate(sane['msg'], dest='en')
-            flag = mapping.get(t.src.lower(), t.src.lower())
-            reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '`' + ' '.join(sane['emotes'])
-            await client.send_message(eng_channel, reply)
-        except Exception as e:
-            #print(str(e))
-            return
+        await client.send_message(eng_channel, reply)
 
 
     # auto-translate Eng -> Kor
@@ -89,17 +88,16 @@ async def on_message(message):
 
         sane = await sanitize_message(message)
 
-        if not sane['msg']:
-            return
+        reply = '**' + dude  + '** said: ' + ''.join(sane['emotes'])
+        if sane['msg']:
+            try:
+                t = translator.translate(sane['msg'], dest='ko')
+                flag = mapping.get(t.src.lower(), t.src.lower())
+                reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '` ' + ''.join(sane['emotes'])
+            except Exception as e:
+                return
 
-        try:
-            t = translator.translate(sane['msg'], dest='ko')
-            flag = mapping.get(t.src, t.src)
-            reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '`' + ' '.join(sane['emotes'])
-            await client.send_message(korean_channel, reply)
-        except Exception as e:
-            #print(str(e))
-            return
+        await client.send_message(korean_channel, reply)
 
     ############################################################
     ## Every other command below here will only work for Mods
