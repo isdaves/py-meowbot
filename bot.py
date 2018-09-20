@@ -69,12 +69,12 @@ async def on_message(message):
 
         sane = await sanitize_message(message)
 
-        if not sane['msg']:
+        if not sane['msg'] or not['emotes']
             return
 
         try:
             t = translator.translate(sane['msg'], dest='en')
-            flag = mapping.get(t.src, t.src)
+            flag = mapping.get(t.src.lower(), t.src.lower())
             reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '`' + ' '.join(sane['emotes'])
             await client.send_message(eng_channel, reply)
         except Exception as e:
