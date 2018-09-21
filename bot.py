@@ -1,5 +1,6 @@
 import datetime
 import discord
+import emoji
 import os
 import re
 from googletrans import Translator
@@ -29,7 +30,7 @@ async def sanitize_message(message):
             - emotes: stored and returned as-is
     """
     msg = message.content
-    sane_msg = {}
+    sane_msg = {'msg': '', 'emotes': []}
     # channels
     channel_regex = r'<#\w+>'
     for match in re.findall(channel_regex, msg):
@@ -45,9 +46,15 @@ async def sanitize_message(message):
         user_name = user.display_name or user.name
         msg = re.sub(match, '@' + user_name, msg)
 
-    # emotes
+    # unicode emotes
+    for c in msg:
+        if c in emoji.UNICODE_EMOJI:
+            sane_msg['emotes'].append(c)
+            msg = msg.replace(c, '')
+
+    # discord emotes
     emote_regex = r'<a?:\w+:\w+>'
-    sane_msg['emotes'] = re.findall(emote_regex, msg)
+    sane_msg['emotes'].extend(re.findall(emote_regex, msg))
     sane_msg['msg'] = re.sub(emote_regex, '', msg)
 
     return sane_msg
@@ -64,6 +71,10 @@ async def on_message(message):
     #
     # auto-translate foreign -> Eng
     if (message.channel.id == korean_channel_id) and auto_translate and not message.author.bot and not message.content.startswith('~'):
+        # do nothing if message is an image/video/etc.
+        if message.attachments:
+            return
+
         eng_channel = client.get_channel(eng_channel_id)
         dude = message.author.nick or message.author.name
 
@@ -83,6 +94,10 @@ async def on_message(message):
 
     # auto-translate Eng -> Kor
     if (message.channel.id == eng_channel_id) and auto_translate_reverse and not message.author.bot and not message.content.startswith('~'):
+        # do nothing if message is an image/video/etc.
+        if message.attachments:
+            return
+
         korean_channel = client.get_channel(korean_channel_id)
         dude = message.author.nick or message.author.name
 
