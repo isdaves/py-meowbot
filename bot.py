@@ -1,6 +1,7 @@
 import datetime
 import discord
 import emoji
+import time
 import os
 import re
 from googletrans import Translator
@@ -9,6 +10,7 @@ from langs import mapping
 
 client = discord.Client()
 translator = Translator()
+startTime = time.time()
 
 token = os.environ['discord_token']
 korean_channel_id = '491240895098650624' #korean
@@ -138,10 +140,17 @@ async def on_message(message):
          ~translate [text] - Translate text into English (sends result to same channel)
          ~reversetranslate [text] - Translate text into Korean (sends result to same channel)
          ~showconf - Shows configured values
+         ~uptime - Shows uptime
         ```"""
 
         await client.send_message(message.channel, reply)
 
+
+    # show uptime
+    if message.content.startswith('~uptime'):
+        secs = time.time() - startTime
+        reply = 'I have been awake for ' + str(secs / 60) + ' mins'
+        await client.send_message(message.channel, reply)
 
     # random cute command
     if message.content.startswith('~neko'):
