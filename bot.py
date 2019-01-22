@@ -14,9 +14,10 @@ startTime = time.time()
 
 token = os.environ['discord_token']
 korean_channel_id = '491240895098650624' #korean
-eng_channel_id = '491783217704337408' #korean_translated
+jp_channel_id = '537068655490367496' #japanese
+eng_channel_id = '491783217704337408' #english
+translated_channel_ids = {'en':eng_channel_id, 'ko':korean_channel_id, 'ja': jp_channel_id}
 auto_translate = True; #kor -> eng
-auto_translate_reverse = True; #eng -> kor
 
 @client.event
 async def on_ready():
@@ -64,57 +65,40 @@ async def sanitize_message(message):
 @client.event
 async def on_message(message):
     global korean_channel_id
+    global jp_channel_id
     global eng_channel_id
     global auto_translate
-    global auto_translate_reverse
 
     ################################################
     ## These cases require no permissions
     #
-    # auto-translate foreign -> Eng
-    if (message.channel.id == korean_channel_id) and auto_translate and not message.author.bot and not message.content.startswith('~'):
+    # auto-translate msg sent to any translation channel
+    # and send it to the others
+    if (message.channel.id in translated_channel_ids.values()) and auto_translate and not message.author.bot and not message.content.startswith('~'):
         # do nothing if message is an image/video/etc.
         if message.attachments:
             return
 
-        eng_channel = client.get_channel(eng_channel_id)
         dude = message.author.nick or message.author.name
-
         sane = await sanitize_message(message)
 
         reply = '**' + dude  + '** said: ' + ''.join(sane['emotes'])
+        replies = {'en': reply, 'ko':reply, 'ja':reply}
+        original_lang = [k for k,v in translated_channel_ids.items() if v == message.channel.id][0]
+        # remove the original channel from the list of receivers
+        del replies[original_lang]
         if sane['msg']:
-            try:
-                t = translator.translate(sane['msg'], dest='en')
-                flag = mapping.get(t.src.lower(), t.src.lower())
-                reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '` ' + ''.join(sane['emotes'])
-            except Exception as e:
-                return
+            for lang in replies.keys():
+                try:
+                    t = translator.translate(sane['msg'], dest=lang)
+                    flag = mapping.get(t.src.lower(), t.src.lower())
+                    replies[lang] = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '` ' + ''.join(sane['emotes'])
+                except Exception as e:
+                    return
 
-        await client.send_message(eng_channel, reply)
-
-
-    # auto-translate Eng -> Kor
-    if (message.channel.id == eng_channel_id) and auto_translate_reverse and not message.author.bot and not message.content.startswith('~'):
-        # do nothing if message is an image/video/etc.
-        if message.attachments:
-            return
-
-        korean_channel = client.get_channel(korean_channel_id)
-        dude = message.author.nick or message.author.name
-
-        sane = await sanitize_message(message)
-
-        reply = '**' + dude  + '** said: ' + ''.join(sane['emotes'])
-        if sane['msg']:
-            try:
-                t = translator.translate(sane['msg'], dest='ko')
-                flag = mapping.get(t.src.lower(), t.src.lower())
-                reply = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '` ' + ''.join(sane['emotes'])
-            except Exception as e:
-                return
-
-        await client.send_message(korean_channel, reply)
+        for lang, reply in replies.items():
+            chan = client.get_channel(translated_channel_ids[lang])
+            await client.send_message(chan, replies[lang])
 
     ############################################################
     ## Every other command below here will only work for Mods
@@ -133,12 +117,14 @@ async def on_message(message):
          ~neko - just useless cuteness
          ~getkoreanchannel - show current set value
          ~setkoreanchannel [#channel_name] - set the channel where the bot should pick up Korean text from
+         ~getjpchannel - show current set value
+         ~setjpchannel [#channel_name] - set the channel where the bot should pick up Japanese text from
          ~getengchannel - show current set value
          ~setengchannel [#channel_name] - set the channel where the bot should send the translated text in English
          ~autotranslate - toggle the automatic translations True and False
-         ~reversedautotranslate - toggle the automatic translations from English to Foreign True and False
-         ~translate [text] - Translate text into English (sends result to same channel)
-         ~reversetranslate [text] - Translate text into Korean (sends result to same channel)
+         ~translatetoeng [text] - Translate text into English (sends result to same channel)
+         ~translatetokorean [text] - Translate text into Korean (sends result to same channel)
+         ~translatetojp [text] - Translate text into Japanese (sends result to same channel)
          ~showconf - Shows configured values
          ~uptime - Shows uptime
         ```"""
@@ -161,8 +147,8 @@ async def on_message(message):
     if message.content.startswith('~showconf'):
         reply = """```
         * Auto-translation is [""" + str(auto_translate) + """]
-        * Reverse auto-translation is [""" + str(auto_translate_reverse) + """]
         * Korean channel is #""" + client.get_channel(korean_channel_id).name + """
+        * Japanese channel is #""" + client.get_channel(jp_channel_id).name + """
         * English channel is #""" + client.get_channel(eng_channel_id).name + """
         ```"""
 
@@ -180,6 +166,19 @@ async def on_message(message):
         korean_channel_id = channel.id
         await client.send_message(message.channel, 'Korean text channel is now: `#'
                                     + client.get_channel(korean_channel_id).name + '`')
+
+    # set Japanese text channel
+    if message.content.startswith('~setjpchannel'):
+        try:
+            server = message.server.name
+            channel_text = message.content.split(' ', 1)[1].replace('#', '')
+            channel = discord.utils.get(client.get_all_channels(), server__name=server, name=channel_text)
+        except:
+            await client.send_message(message.channel, 'Invalid channel')
+
+        jp_channel_id = channel.id
+        await client.send_message(message.channel, 'Japanese text channel is now: `#'
+                                    + client.get_channel(jp_channel_id).name + '`')
 
     # set English text channel
     if message.content.startswith('~setengchannel'):
@@ -199,12 +198,15 @@ async def on_message(message):
         await client.send_message(message.channel, 'Korean text channel is set to: `#' +
                                   client.get_channel(korean_channel_id).name + '`')
 
+    # get Japanese text channel for translation
+    if message.content.startswith('~getjpchannel'):
+        await client.send_message(message.channel, 'Japanese text channel is set to: `#' +
+                                  client.get_channel(jp_channel_id).name + '`')
 
     # get English channel for translation
     if message.content.startswith('~getengchannel'):
         await client.send_message(message.channel, 'English text channel is set to: `#' +
                                   client.get_channel(eng_channel_id).name + '`')
-
 
     # enable/disable auto-translate
     if message.content.startswith('~autotranslate'):
@@ -215,17 +217,8 @@ async def on_message(message):
 
         await client.send_message(message.channel, 'Auto-translation now set to `' + str(auto_translate) + '`')
 
-    # enable/disable auto-translate-reverse
-    if message.content.startswith('~reversedautotranslate'):
-        if auto_translate_reverse:
-            auto_translate_reverse = False
-        else:
-            auto_translate_reverse = True
-
-        await client.send_message(message.channel, 'Reverse auto-translation now set to `' + str(auto_translate_reverse) + '`')
-
     # translate one string on demand to English
-    if message.content.startswith('~translate'):
+    if message.content.startswith('~translatetoeng'):
         try:
             original_text = message.content.split(' ', 1)[1]
             t = translator.translate(original_text, dest='en')
@@ -237,10 +230,22 @@ async def on_message(message):
             await client.send_message(message.channel, 'Your request was invalid >_<')
 
     # translate one string on demand to Korean
-    if message.content.startswith('~reversetranslate'):
+    if message.content.startswith('~translatetokorean'):
         try:
             original_text = message.content.split(' ', 1)[1]
             t = translator.translate(original_text, dest='ko')
+            flag = mapping.get(t.src, t.src)
+            reply = '**' + message.author.name + '** said :flag_' + flag + ': :`' + t.text + '`'
+            await client.send_message(message.channel, reply)
+        except Exception as e:
+            print(str(e))
+            await client.send_message(message.channel, 'Your request was invalid >_<')
+
+    # translate one string on demand to Japanese
+    if message.content.startswith('~translatetojp'):
+        try:
+            original_text = message.content.split(' ', 1)[1]
+            t = translator.translate(original_text, dest='ja')
             flag = mapping.get(t.src, t.src)
             reply = '**' + message.author.name + '** said :flag_' + flag + ': :`' + t.text + '`'
             await client.send_message(message.channel, reply)
