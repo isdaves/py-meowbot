@@ -14,8 +14,8 @@ startTime = time.time()
 
 token = os.environ['discord_token']
 korean_channel_id = '560101685398339585' #korean
-jp_channel_id = '537068655490367496' #japanese
-eng_channel_id = '491783217704337408' #english
+jp_channel_id = '560102616525307904' #japanese
+eng_channel_id = '560102850475327491' #english
 translated_channel_ids = {'en':eng_channel_id, 'ko':korean_channel_id, 'ja': jp_channel_id}
 auto_translate = True; #kor -> eng
 
