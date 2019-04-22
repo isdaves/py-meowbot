@@ -13,16 +13,19 @@ translator = Translator()
 startTime = time.time()
 
 token = os.environ['discord_token']
-korean_channel_id = '560101685398339585' #korean
-jp_channel_id = '560102616525307904' #japanese
-eng_channel_id = '560102850475327491' #english
-translated_channel_ids = {'en':eng_channel_id, 'ko':korean_channel_id, 'ja': jp_channel_id}
-auto_translate = True; #kor -> eng
+korean_channel_id = '560101685398339585'  # korean
+jp_channel_id = '560102616525307904'  # japanese
+eng_channel_id = '560102850475327491'  # english
+translated_channel_ids = {'en': eng_channel_id,
+                          'ko': korean_channel_id,
+                          'ja': jp_channel_id}
+auto_translate = True  # kor -> eng
+
 
 @client.event
 async def on_ready():
-    time = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
-    print(time + ' Logged in to Discord server')
+    t = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+    print(t + ' Logged in to Discord server')
 
 
 async def sanitize_message(message):
@@ -62,6 +65,7 @@ async def sanitize_message(message):
 
     return sane_msg
 
+
 @client.event
 async def on_message(message):
     global korean_channel_id
@@ -70,11 +74,12 @@ async def on_message(message):
     global auto_translate
 
     ################################################
-    ## These cases require no permissions
+    # These cases require no permissions
     #
     # auto-translate msg sent to any translation channel
     # and send it to the others
-    if (message.channel.id in translated_channel_ids.values()) and auto_translate and not message.author.bot and not message.content.startswith('~'):
+    if (message.channel.id in translated_channel_ids.values())\
+            and auto_translate and not message.author.bot and not message.content.startswith('~'):
         # do nothing if message is an image/video/etc.
         if message.attachments:
             return
@@ -82,8 +87,8 @@ async def on_message(message):
         dude = message.author.nick or message.author.name
         sane = await sanitize_message(message)
 
-        reply = '**' + dude  + '** said: ' + ''.join(sane['emotes'])
-        replies = {'en': reply, 'ko':reply, 'ja':reply}
+        reply = '**' + dude + '** said: ' + ''.join(sane['emotes'])
+        replies = {'en': reply, 'ko': reply, 'ja': reply}
         original_lang = [k for k,v in translated_channel_ids.items() if v == message.channel.id][0]
         # remove the original channel from the list of receivers
         del replies[original_lang]
@@ -92,8 +97,9 @@ async def on_message(message):
                 try:
                     t = translator.translate(sane['msg'], dest=lang)
                     flag = mapping.get(t.src.lower(), t.src.lower())
-                    replies[lang] = '**' + dude  + '** said :flag_' + flag + ': :`' + t.text + '` ' + ''.join(sane['emotes'])
-                except Exception as e:
+                    replies[lang] = '**' + dude + '** said :flag_' + flag + ': :`' +\
+                                    t.text + '` ' + ''.join(sane['emotes'])
+                except Exception:
                     return
 
         for lang, reply in replies.items():
@@ -101,14 +107,14 @@ async def on_message(message):
             await client.send_message(chan, replies[lang])
 
     ############################################################
-    ## Every other command below here will only work for Mods
-    ## ignore everyone else
+    # Every other command below here will only work for Mods
+    # ignore everyone else
     roles = []
     for role in message.author.roles:
         roles.append(role.name)
 
     if 'Mods' not in roles:
-            return
+        return
 
     # help!
     if message.content.startswith('~help'):
@@ -130,7 +136,6 @@ async def on_message(message):
         ```"""
 
         await client.send_message(message.channel, reply)
-
 
     # show uptime
     if message.content.startswith('~uptime'):
@@ -160,12 +165,12 @@ async def on_message(message):
             server = message.server.name
             channel_text = message.content.split(' ', 1)[1].replace('#', '')
             channel = discord.utils.get(client.get_all_channels(), server__name=server, name=channel_text)
-        except:
+        except Exception:
             await client.send_message(message.channel, 'Invalid channel')
 
         korean_channel_id = channel.id
         await client.send_message(message.channel, 'Korean text channel is now: `#'
-                                    + client.get_channel(korean_channel_id).name + '`')
+                                  + client.get_channel(korean_channel_id).name + '`')
 
     # set Japanese text channel
     if message.content.startswith('~setjpchannel'):
@@ -173,7 +178,7 @@ async def on_message(message):
             server = message.server.name
             channel_text = message.content.split(' ', 1)[1].replace('#', '')
             channel = discord.utils.get(client.get_all_channels(), server__name=server, name=channel_text)
-        except:
+        except Exception:
             await client.send_message(message.channel, 'Invalid channel')
 
         jp_channel_id = channel.id
@@ -186,12 +191,12 @@ async def on_message(message):
             server = message.server.name
             channel_text = message.content.split(' ', 1)[1].replace('#', '')
             channel = discord.utils.get(client.get_all_channels(), server__name=server, name=channel_text)
-        except:
+        except Exception:
             await client.send_message(message.channel, 'Invalid channel')
 
         eng_channel_id = channel.id
         await client.send_message(message.channel, 'English text channel is now: `#'
-                                    + client.get_channel(eng_channel_id).name + '`')
+                                  + client.get_channel(eng_channel_id).name + '`')
 
     # get Korean text channel for translation
     if message.content.startswith('~getkoreanchannel'):
