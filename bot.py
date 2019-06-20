@@ -258,6 +258,18 @@ async def on_message(message):
             print(str(e))
             await client.send_message(message.channel, 'Your request was invalid >_<')
 
+    # say something in #channel
+    if message.content.startswith('~say'):
+        try:
+            split = message.content.split(' ', 2)
+            channel_id = split[1].replace('<#', '').replace('>', '')
+            msg = split[2]
+            channel_obj = client.get_channel(channel_id)
+            await client.send_message(client.get_channel(channel_id), msg)
+        except Exception as e:
+            print(str(e))
+            await client.send_message(message.channel, 'Wrong syntax: ~say #channel memes go here')
+
 
 # run the bot
 client.run(token)
