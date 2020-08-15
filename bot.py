@@ -13,9 +13,9 @@ translator = Translator()
 startTime = time.time()
 
 token = os.environ['discord_token']
-korean_channel_id = '560101685398339585'  # korean
-jp_channel_id = '560102616525307904'  # japanese
-eng_channel_id = '560102850475327491'  # english
+korean_channel_id = 560101685398339585  # korean
+jp_channel_id = 560102616525307904  # japanese
+eng_channel_id = 560102850475327491  # english
 translated_channel_ids = {'en': eng_channel_id,
                           'ko': korean_channel_id,
                           'ja': jp_channel_id}
@@ -104,7 +104,7 @@ async def on_message(message):
 
         for lang, reply in replies.items():
             chan = client.get_channel(translated_channel_ids[lang])
-            await client.send_message(chan, replies[lang])
+            await chan.send(replies[lang])
 
     ############################################################
     # Every other command below here will only work for Mods
@@ -135,18 +135,18 @@ async def on_message(message):
          ~uptime - Shows uptime
         ```"""
 
-        await client.send_message(message.channel, reply)
+        await message.channel.send(reply)
 
     # show uptime
     if message.content.startswith('~uptime'):
         secs = time.time() - startTime
         reply = 'I have been awake for ' + str(secs / 60) + ' mins'
-        await client.send_message(message.channel, reply)
+        await message.channel.send(reply)
 
     # random cute command
     if message.content.startswith('~neko'):
         reply = 'にゃーん'
-        await client.send_message(message.channel, reply)
+        await message.channel.send(reply)
 
     # show conf
     if message.content.startswith('~showconf'):
@@ -157,60 +157,60 @@ async def on_message(message):
         * English channel is #""" + client.get_channel(eng_channel_id).name + """
         ```"""
 
-        await client.send_message(message.channel, reply)
+        await message.channel.send(reply)
 
     # set Korean text channel
     if message.content.startswith('~setkoreanchannel'):
         try:
-            server = message.server.name
+            server = message.guild.name
             channel_text = message.content.split(' ', 1)[1].replace('#', '')
             channel = discord.utils.get(client.get_all_channels(), server__name=server, name=channel_text)
         except Exception:
-            await client.send_message(message.channel, 'Invalid channel')
+            await message.channel.send('Invalid channel')
 
         korean_channel_id = channel.id
-        await client.send_message(message.channel, 'Korean text channel is now: `#'
+        await message.channel.send('Korean text channel is now: `#'
                                   + client.get_channel(korean_channel_id).name + '`')
 
     # set Japanese text channel
     if message.content.startswith('~setjpchannel'):
         try:
-            server = message.server.name
+            server = message.guild.name
             channel_text = message.content.split(' ', 1)[1].replace('#', '')
             channel = discord.utils.get(client.get_all_channels(), server__name=server, name=channel_text)
         except Exception:
-            await client.send_message(message.channel, 'Invalid channel')
+            await message.channel.send('Invalid channel')
 
         jp_channel_id = channel.id
-        await client.send_message(message.channel, 'Japanese text channel is now: `#'
+        await message.channel.send('Japanese text channel is now: `#'
                                     + client.get_channel(jp_channel_id).name + '`')
 
     # set English text channel
     if message.content.startswith('~setengchannel'):
         try:
-            server = message.server.name
+            server = message.guild.name
             channel_text = message.content.split(' ', 1)[1].replace('#', '')
             channel = discord.utils.get(client.get_all_channels(), server__name=server, name=channel_text)
         except Exception:
-            await client.send_message(message.channel, 'Invalid channel')
+            await message.channel.send('Invalid channel')
 
         eng_channel_id = channel.id
-        await client.send_message(message.channel, 'English text channel is now: `#'
+        await message.channel.send('English text channel is now: `#'
                                   + client.get_channel(eng_channel_id).name + '`')
 
     # get Korean text channel for translation
     if message.content.startswith('~getkoreanchannel'):
-        await client.send_message(message.channel, 'Korean text channel is set to: `#' +
+        await message.channel.send('Korean text channel is set to: `#' +
                                   client.get_channel(korean_channel_id).name + '`')
 
     # get Japanese text channel for translation
     if message.content.startswith('~getjpchannel'):
-        await client.send_message(message.channel, 'Japanese text channel is set to: `#' +
+        await message.channel.send('Japanese text channel is set to: `#' +
                                   client.get_channel(jp_channel_id).name + '`')
 
     # get English channel for translation
     if message.content.startswith('~getengchannel'):
-        await client.send_message(message.channel, 'English text channel is set to: `#' +
+        await message.channel.send('English text channel is set to: `#' +
                                   client.get_channel(eng_channel_id).name + '`')
 
     # enable/disable auto-translate
@@ -220,7 +220,7 @@ async def on_message(message):
         else:
             auto_translate = True
 
-        await client.send_message(message.channel, 'Auto-translation now set to `' + str(auto_translate) + '`')
+        await message.channel.send('Auto-translation now set to `' + str(auto_translate) + '`')
 
     # translate one string on demand to English
     if message.content.startswith('~translatetoeng'):
@@ -229,10 +229,10 @@ async def on_message(message):
             t = translator.translate(original_text, dest='en')
             flag = mapping.get(t.src, t.src)
             reply = '**' + message.author.name + '** said :flag_' + flag + ': :`' + t.text + '`'
-            await client.send_message(message.channel, reply)
+            await message.channel.send(reply)
         except Exception as e:
             print(str(e))
-            await client.send_message(message.channel, 'Your request was invalid >_<')
+            await message.channel.send('Your request was invalid >_<')
 
     # translate one string on demand to Korean
     if message.content.startswith('~translatetokorean'):
@@ -241,10 +241,10 @@ async def on_message(message):
             t = translator.translate(original_text, dest='ko')
             flag = mapping.get(t.src, t.src)
             reply = '**' + message.author.name + '** said :flag_' + flag + ': :`' + t.text + '`'
-            await client.send_message(message.channel, reply)
+            await message.channel.send(reply)
         except Exception as e:
             print(str(e))
-            await client.send_message(message.channel, 'Your request was invalid >_<')
+            await message.channel.send('Your request was invalid >_<')
 
     # translate one string on demand to Japanese
     if message.content.startswith('~translatetojp'):
@@ -253,10 +253,10 @@ async def on_message(message):
             t = translator.translate(original_text, dest='ja')
             flag = mapping.get(t.src, t.src)
             reply = '**' + message.author.name + '** said :flag_' + flag + ': :`' + t.text + '`'
-            await client.send_message(message.channel, reply)
+            await message.channel.send(reply)
         except Exception as e:
             print(str(e))
-            await client.send_message(message.channel, 'Your request was invalid >_<')
+            await message.channel.send('Your request was invalid >_<')
 
     # say something in #channel
     if message.content.startswith('~say'):
@@ -265,10 +265,10 @@ async def on_message(message):
             channel_id = split[1].replace('<#', '').replace('>', '')
             msg = split[2]
             channel_obj = client.get_channel(channel_id)
-            await client.send_message(client.get_channel(channel_id), msg)
+            await channel_obj.send(msg)
         except Exception as e:
             print(str(e))
-            await client.send_message(message.channel, 'Wrong syntax: ~say #channel memes go here')
+            await message.channel.send('Wrong syntax: ~say #channel memes go here')
 
 
 # run the bot
