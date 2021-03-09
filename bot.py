@@ -48,7 +48,7 @@ async def sanitize_message(message):
     mention_regex = r'<@!?\w+>'
     for match in re.findall(mention_regex, msg):
         user_id = match.replace('<@', '').replace('>', '').replace('!', '')
-        user = await client.get_user(user_id)
+        user = await client.fetch_user(user_id)
         user_name = user.display_name or user.name
         msg = re.sub(match, '@' + user_name, msg)
 
