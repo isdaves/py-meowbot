@@ -8,6 +8,8 @@ from googletrans import Translator
 
 from langs import mapping
 
+print("Starting things up...")
+
 client = discord.Client()
 translator = Translator()
 startTime = time.time()
@@ -99,7 +101,8 @@ async def on_message(message):
                     flag = mapping.get(t.src.lower(), t.src.lower())
                     replies[lang] = '**' + dude + '** said :flag_' + flag + ': :`' +\
                                     t.text + '` ' + ''.join(sane['emotes'])
-                except Exception:
+                except Exception as e:
+                    print("Exception!", str(e))
                     return
 
         for lang, reply in replies.items():
@@ -109,11 +112,13 @@ async def on_message(message):
     ############################################################
     # Every other command below here will only work for Mods
     # ignore everyone else
-    roles = []
-    for role in message.author.roles:
-        roles.append(role.name)
-
-    if 'Mods' not in roles:
+    # roles = []
+    # for role in message.author.roles:
+    #     roles.append(role.name)
+    #
+    # if 'Mods' not in roles:
+    #    return
+    if message.author.name not in ["daves", "dafty"]:
         return
 
     # help!
